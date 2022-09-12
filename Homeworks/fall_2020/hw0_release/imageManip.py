@@ -1,8 +1,11 @@
 import math
+from turtle import dot
+from typing import Sequence
 
 import numpy as np
 from PIL import Image
 from skimage import color, io
+from linalg import dot_product
 
 
 def load(image_path):
@@ -20,7 +23,7 @@ def load(image_path):
 
     ### YOUR CODE HERE
     # Use skimage io.imread
-    pass
+    out = io.imread(image_path)
     ### END YOUR CODE
 
     # Let's convert the image to be between the correct range.
@@ -45,7 +48,7 @@ def crop_image(image, start_row, start_col, num_rows, num_cols):
     out = None
 
     ### YOUR CODE HERE
-    pass
+    out = image[start_row:start_row+num_rows, start_col:start_col+num_cols, :]
     ### END YOUR CODE
 
     return out
@@ -68,7 +71,7 @@ def dim_image(image):
     out = None
 
     ### YOUR CODE HERE
-    pass
+    out = 0.5 * image**2
     ### END YOUR CODE
 
     return out
@@ -96,7 +99,12 @@ def resize_image(input_image, output_rows, output_cols):
     #    > This should require two nested for loops!
 
     ### YOUR CODE HERE
-    pass
+    row_scale_factor = input_rows / output_rows
+    col_scale_factor = input_cols / output_cols
+
+    for i in range(output_rows):
+        for j in range(output_cols):
+            output_image[i, j, :] = input_image[int(i*row_scale_factor), int(j*col_scale_factor), :]
     ### END YOUR CODE
 
     # 3. Return the output image
@@ -119,8 +127,48 @@ def rotate2d(point, theta):
     # Reminder: np.cos() and np.sin() will be useful here!
 
     ## YOUR CODE HERE
-    pass
+    cos = np.cos(theta)
+    sin = np.sin(theta)
+
+    rotate_matrix = np.array([[cos, -sin],[sin, cos]])
+    out = dot_product(rotate_matrix, point)
+
+    return out
     ### END YOUR CODE
+
+
+def rotate_around_center(points: Sequence[tuple], center: tuple, theta: float) -> Sequence[tuple]:
+    '''Rotate lists of coordinates around center by angle theta
+
+    Args:
+        points: List of original coordinates, with shape (2, h, w)
+        center: Point that use to rotate around, with shape (2, )
+        theta: Angle to rotate, in radians
+
+    Returns:
+        (np.ndarray): Rotated coordinates, with the same shape as the input points
+    '''
+
+    # Add one to end of points to make a 3 dimention transformation
+    ones = np.ones((1, points.shape[1], points.shape[2]))
+    points = np.concatenate((points, ones), axis=0)
+
+    point_shape = points.shape
+    points = points.reshape(3, -1)
+
+    # Process
+    c_row, c_col = center
+    cos = np.cos(theta)
+    sin = np.sin(theta)
+
+    neg_translate_matrix = np.array([[1, 0, -c_row], [0, 1, -c_col], [0, 0, 1]])
+    pos_translate_matrix = np.array([[1, 0, c_row], [0, 1, c_col], [0, 0, 1]])
+    rotate_matrix = np.array([[cos, -sin, 0],[sin, cos, 0], [0, 0, 1]])
+
+    out = dot_product(pos_translate_matrix, dot_product(rotate_matrix, dot_product(neg_translate_matrix, points)))
+    out = out.reshape(point_shape)
+
+    return out[:2]
 
 
 def rotate_image(input_image, theta):
@@ -141,8 +189,29 @@ def rotate_image(input_image, theta):
     output_image = np.zeros_like(input_image)
 
     ## YOUR CODE HERE
-    pass
+    indices = np.indices((input_rows, input_cols))
+    c_row, c_col = input_rows // 2, input_cols // 2
+
+    rotate_indices = rotate_around_center(indices, (c_row, c_col), theta)
+    acc_indices = (rotate_indices[0] < input_rows) * (rotate_indices[0] >= 0) * (rotate_indices[1] >= 0) * (rotate_indices[1] < input_cols)
+    
+    row_idx = rotate_indices[0][acc_indices]
+    col_idx = rotate_indices[1][acc_indices]
+    output_image[acc_indices] = input_image[row_idx.astype(int), col_idx.astype(int)]
     ### END YOUR CODE
 
     # 3. Return the output image
     return output_image
+
+
+if __name__ == '__main__':
+    a = np.array([[1, 2, 3], [4, 5, 6]])
+    indices = np.indices((2, 3))
+    trans_indices = rotate_around_center(indices, (1,1), np.pi/2)
+    acc_indices = (trans_indices[0] < 1) * (trans_indices[0] >= 0) * (trans_indices[1] >= 0) * (trans_indices[1] < 2)
+
+    row_idx = indices[0][acc_indices]
+    col_idx = indices[1][acc_indices]
+    
+    print(a[row_idx, col_idx])
+    # print(a[acc_indices[0], acc_indices[1]])
