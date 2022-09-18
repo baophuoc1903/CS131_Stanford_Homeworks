@@ -149,28 +149,47 @@ def hysteresis_tracking(img, weak_edge=32, strong_edge=255):
     return out
 
 
-if __name__ == '__main__':
-    # Run to visualize each step of Canny edge detection
-    img_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), r"Images/emma_stone.jpg")
-    orig_img = cv2.imread(img_path, 0)
-
+def canny_edge_detection(img, gaus_kernel=3, gaus_sigma=1,
+                         low_thresh_ratio=5/255, high_thresh_ratio=30/255, weak_edge=32):
+    """
+    :param img: original image that need to detect edge
+    :param gaus_kernel: gaussian kernel size using to blur img to reduce noise
+    :param gaus_sigma: standard deviation of gaussian kernel along x and y axes
+    :param low_thresh_ratio: low threshold using in double thresholding
+    :param high_thresh_ratio: high threshold using in double thresholding
+    :param weak_edge: pixel value of weak edge
+    :return: tuple of the canny edge detection image and another tuple of processing images (use to visualize process)
+    """
     # Gaussian blur to reduce noise
-    blur_img = gaussian_blur(orig_img, 3, 1)
+    blur_img = gaussian_blur(img, gaus_kernel, gaus_sigma)
 
     # Sobel filter to extract edge
-    G_mag, theta = sobel_filter(orig_img)
+    G_mag, theta = sobel_filter(blur_img)
 
     # Non-max suppression to make edge thinner
     non_max = non_max_suppression(G_mag, theta)
 
     # Thresholding to classify edge to weak or strong edge
-    threshold = double_threshold(non_max, low_thresh_ratio=5/255, high_thresh_ratio=30/255, weak_edge=32)
+    threshold = double_threshold(non_max, low_thresh_ratio=low_thresh_ratio,
+                                 high_thresh_ratio=high_thresh_ratio, weak_edge=weak_edge)
 
     # Hysteresis tracking to transform weak edge to strong edge if it passed the condition
     canny_img = hysteresis_tracking(threshold)
+
+    return canny_img, (G_mag, non_max, threshold)
+
+
+if __name__ == '__main__':
+    # Run to visualize each step of Canny edge detection
+
+    # Read image
+    img_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), r"Images/emma_stone.jpg")
+    orig_img = cv2.imread(img_path, 0)
+
+    # Canny edge detection
+    canny_img, (G_mag, non_max, threshold) = canny_edge_detection(orig_img)
 
     # Visualize canny edge detection precess
     compare_images([orig_img, G_mag, non_max, threshold, canny_img], ["Original", "G_magnitude",
                                                                       "After non-max suppression",
                                                                       "Double Threshold", "Canny result"])
-
