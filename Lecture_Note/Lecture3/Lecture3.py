@@ -6,6 +6,13 @@ import os
 
 
 def box_filter(image, kernel=3):
+    """
+    Blurring image using box filter
+
+    :param image: image that need to blur
+    :param kernel: kernel size using in blurring filter
+    :return: blurring image
+    """
     filter = np.ones((kernel, kernel)) / kernel ** 2
     filter_image = convolve(image, filter)
 
@@ -13,6 +20,13 @@ def box_filter(image, kernel=3):
 
 
 def sharpen_filter(image, kernel=3):
+    """
+    Sharpening image
+
+    :param image: image that need to sharpen
+    :param kernel: kernel size using in sharpen filter
+    :return: sharpen image
+    """
     sharp_fil = np.zeros((kernel, kernel))
     sharp_fil[kernel // 2, kernel // 2] = 2
 
@@ -23,6 +37,10 @@ def sharpen_filter(image, kernel=3):
 
 
 def generate_image_for_characterize_edge():
+    """
+    Generate a image to visualize a characterize edge
+    :return: an image
+    """
     blur_cols = 25
     black = 50
     white = 35
@@ -48,6 +66,12 @@ def generate_image_for_characterize_edge():
 
 
 def characterize_edge(image, scanline=None):
+    """
+    Visualize a characterize edge of a horizontal scanline in image
+
+    :param image: original image
+    :param scanline: a horizontal line across image
+    """
     if scanline is None:
         scanline = image.shape[0] // 2
 
@@ -69,14 +93,10 @@ def characterize_edge(image, scanline=None):
     plt.subplot(132)
     plt.plot(image[scanline], color='k')
     plt.title("Intensity function\n(Along horizontal scanline)")
-    plt.xticks([])
-    plt.yticks([])
 
     plt.subplot(133)
     plt.plot(first_derivative[scanline], color='k')
     plt.title("First derivative")
-    plt.xticks([])
-    plt.yticks([])
 
     plt.show()
 
@@ -98,8 +118,24 @@ if __name__ == '__main__':
     # plt.axis('off')
     # plt.show()
 
-
     # # ======== CHARACTERIZE EDGE =========
-    img = generate_image_for_characterize_edge()
-    characterize_edge(img)
+    # img = generate_image_for_characterize_edge()
+    # characterize_edge(img)
 
+    # Image Histogram
+    img_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), r"Images/iguana.jpg")
+    img = cv2.imread(img_path, 0)
+
+    hist, _ = np.histogram(img.ravel(), bins=256, range=(0, 256))
+
+    plt.figure(figsize=(15, 5))
+    plt.subplot(121)
+    plt.imshow(img, cmap='gray')
+    plt.axis('off')
+
+    plt.subplot(122)
+    plt.plot(np.arange(256), hist)
+    plt.xlabel("Pixel value")
+    plt.ylabel("Count")
+    plt.title("Pixel value histogram", weight="bold", color='k')
+    plt.show()

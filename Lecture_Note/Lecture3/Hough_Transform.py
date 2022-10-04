@@ -6,6 +6,15 @@ from Canny import canny_edge_detection, compare_images
 
 
 def hough_transform(img, theta_step=1):
+    """
+    Transform image from x,y space into polar r,theta space (y=a*x+b => r=y*sin(theta)+x*cos(theta))
+
+    :param img: original image
+    :param theta_step: parameter that used to quantize theta (from -90 degree to 90 degree with theta_step size)
+    :return: hough_img: 2D matrix - line image in r,theta space
+             thetas: 1D array - theta quantization (length equal number of column in hough_img)
+             dist: 1D array - radius quantization (length equal number of rows in hough_img)
+    """
     # Angle quantization
     thetas = np.deg2rad(np.arange(-90, 90, theta_step))
 
@@ -23,10 +32,20 @@ def hough_transform(img, theta_step=1):
                     r_quantize = int(np.around(i*np.sin(thetas[k])+j*np.cos(thetas[k])))
                     hough_img[r_quantize+max_dist, k] += 1
 
-    return hough_img, thetas, np.linspace(-max_dist, max_dist, 2*max_dist+1)
+    dist = np.linspace(-max_dist, max_dist, 2*max_dist+1)
+    return hough_img, thetas, dist
 
 
 def draw_line(img, list_theta, list_p, thickness=1):
+    """
+    Drawing a list of lines given the p,theta parameter corresponding in polar space
+
+    :param img: image that need to draw lines
+    :param list_theta: list of angles of lines
+    :param list_p: list of radius of lines corresponding to list_theta
+    :param thickness: thickness of line that is drawn
+    :return: img after draw all lines
+    """
     out = img.copy()
 
     for theta, p in zip(list_theta, list_p):
