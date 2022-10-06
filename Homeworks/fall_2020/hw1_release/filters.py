@@ -29,10 +29,17 @@ def conv_nested(image, kernel):
     out = np.zeros((Hi, Wi))
 
     ### YOUR CODE HERE
-    pass
+    hc, wc = Hk // 2, Wk // 2
+    for row in range(Hi):
+        for col in range(Wi):
+            for ker_row in range(Hk):
+                for ker_col in range(Wk):
+                    if 0 <= row + hc - ker_row < Hi and 0 <= col + wc - ker_col < Wi:
+                        out[row, col] += kernel[ker_row, ker_col] * image[row + hc - ker_row, col + wc - ker_col]
     ### END YOUR CODE
 
     return out
+
 
 def zero_pad(image, pad_height, pad_width):
     """ Zero-pad an image.
@@ -56,7 +63,7 @@ def zero_pad(image, pad_height, pad_width):
     out = None
 
     ### YOUR CODE HERE
-    pass
+    out = np.pad(image, pad_width=((pad_height, pad_height), (pad_width, pad_width)))
     ### END YOUR CODE
     return out
 
@@ -85,10 +92,17 @@ def conv_fast(image, kernel):
     out = np.zeros((Hi, Wi))
 
     ### YOUR CODE HERE
-    pass
+    hc, wc = Hk // 2, Wk // 2
+    pad = zero_pad(image, pad_height=hc, pad_width=wc)
+    kernel = np.flip(kernel, axis=(0, 1))
+    for row in range(Hi):
+        for col in range(Wi):
+            out[row, col] = np.sum(kernel * pad[row:row + Hk, col:col + Wk])
+
     ### END YOUR CODE
 
     return out
+
 
 def cross_correlation(f, g):
     """ Cross-correlation of image f and template g.
@@ -105,10 +119,11 @@ def cross_correlation(f, g):
 
     out = None
     ### YOUR CODE HERE
-    pass
+    out = conv_fast(f, np.flip(g, axis=(0, 1)))
     ### END YOUR CODE
 
     return out
+
 
 def zero_mean_cross_correlation(f, g):
     """ Zero-mean cross-correlation of image f and template g.
@@ -127,10 +142,11 @@ def zero_mean_cross_correlation(f, g):
 
     out = None
     ### YOUR CODE HERE
-    pass
+    out = cross_correlation(f, g - g.mean())
     ### END YOUR CODE
 
     return out
+
 
 def normalized_cross_correlation(f, g):
     """ Normalized cross-correlation of image f and template g.
@@ -150,8 +166,19 @@ def normalized_cross_correlation(f, g):
     """
 
     out = None
+
     ### YOUR CODE HERE
-    pass
+    Hi, Wi = f.shape
+    Hk, Wk = g.shape
+    out = np.zeros((Hi, Wi))
+    hc, wc = Hk // 2, Wk // 2
+    pad = zero_pad(f, pad_height=hc, pad_width=wc)
+    g = (g - g.mean()) / g.std()
+    for row in range(Hi):
+        for col in range(Wi):
+            local_f = pad[row:row + Hk, col:col + Wk]
+            local_f = (local_f - local_f.mean()) / local_f.std()
+            out[row, col] = np.sum(g * local_f)
     ### END YOUR CODE
 
     return out
