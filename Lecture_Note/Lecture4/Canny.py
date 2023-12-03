@@ -80,7 +80,6 @@ def non_max_suppression(img, theta):
     theta[theta < 0] = theta[theta < 0] + np.pi
     theta = theta * 180 / np.pi
 
-
     for i in range(1, len(out)-1):
         for j in range(1, len(out[0])-1):
             r = q = None
